@@ -34,74 +34,104 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def process_csv(filename):
+def process_csv(filename, chart_name):
+    """Process raw data to suitable format for graph plotting.
+
+    Args:
+        filename (str): csv file name to be processed
+        chart_name (str): name of the plot to generate
+
+    Returns:
+        processed dataframe
+    """
     df = pd.read_csv(os.path.join(app.config["UPLOAD_FOLDER"], filename))
     df["Date"] = pd.to_datetime(df["Date"], format="%d/%m/%Y")
-    # Aggregate data by month for the first chart
-    monthly_expenditure = (
-        df.resample("ME", on="Date").sum(numeric_only=True).reset_index()
-    )
 
-    # Aggregate data for the average spend by category
-    avg_spend_by_category = df.groupby("Category").mean(numeric_only=True).reset_index()
+    if chart_name == "monthly_expenditure_over_time.jpg":
+        # Aggregate data by month for the first chart
+        monthly_expenditure = (
+            df.resample("ME", on="Date").sum(numeric_only=True).reset_index()
+        )
+        return monthly_expenditure
 
-    # Aggregate data for the total spend by category over the 5 years
-    total_spend_by_category = (
-        df.groupby("Category").sum(numeric_only=True).reset_index()
-    )
+    elif chart_name == "average_spend_by_category.jpg":
+        # Aggregate data for the average spend by category
+        avg_spend_by_category = (
+            df.groupby("Category").mean(numeric_only=True).reset_index()
+        )
+        return avg_spend_by_category
+    elif chart_name == "total_spend_by_category_over_5_years.jpg":
+        # Aggregate data for the total spend by category over the 5 years
+        total_spend_by_category = (
+            df.groupby("Category").sum(numeric_only=True).reset_index()
+        )
+        return total_spend_by_category
 
-    return monthly_expenditure, avg_spend_by_category, total_spend_by_category
 
+def generate_chart(processed_data, chart_name):
+    """Save the graphs as jpg in "output" folder.
 
-def generate_chart(monthly_expenditure, avg_spend_by_category, total_spend_by_category):
-    # Monthly Expenditure Over Time chart
-    plt.figure(figsize=(15, 10))
-    plt.plot(
-        monthly_expenditure["Date"],
-        monthly_expenditure["Amount"],
-        marker="o",
-        linestyle="-",
-    )
-    plt.title("Monthly Expenditure Over Time")
-    plt.xlabel("Date")
-    plt.ylabel("Total Expenditure ($)")
-    plt.grid(True)
-    plt.savefig(
-        os.path.join(PARENT_PATH, "output", "monthly_expenditure_over_time.jpg")
-    )
-    plt.close()  # Close the figure to free up memory
+    Args:
+        processed_data (pd.dataframe)
+        chart_name (str): name of the plot to generate
 
-    # Average Spend by Category chart
-    plt.figure(figsize=(15, 10))
-    plt.bar(
-        avg_spend_by_category["Category"],
-        avg_spend_by_category["Amount"],
-        color="skyblue",
-    )
-    plt.title("Average Spend by Category")
-    plt.xlabel("Category")
-    plt.ylabel("Average Expenditure ($)")
-    plt.xticks(rotation=45)  # Rotate category names for better visibility
-    plt.grid(axis="y")
-    plt.savefig(os.path.join(PARENT_PATH, "output", "average_spend_by_category.jpg"))
-    plt.close()
+    Returns:
+        None
+    """
+    if chart_name == "monthly_expenditure_over_time.jpg":
+        # Monthly Expenditure Over Time chart
+        plt.figure(figsize=(15, 10))
+        plt.plot(
+            processed_data["Date"],
+            processed_data["Amount"],
+            marker="o",
+            linestyle="-",
+        )
+        plt.title("Monthly Expenditure Over Time")
+        plt.xlabel("Date")
+        plt.ylabel("Total Expenditure ($)")
+        plt.grid(True)
+        plt.savefig(
+            os.path.join(PARENT_PATH, "output", "monthly_expenditure_over_time.jpg")
+        )
+        plt.close()  # Close the figure to free up memory
+    elif chart_name == "average_spend_by_category.jpg":
+        # Average Spend by Category chart
+        plt.figure(figsize=(15, 10))
+        plt.bar(
+            processed_data["Category"],
+            processed_data["Amount"],
+            color="skyblue",
+        )
+        plt.title("Average Spend by Category")
+        plt.xlabel("Category")
+        plt.ylabel("Average Expenditure ($)")
+        plt.xticks(rotation=45)  # Rotate category names for better visibility
+        plt.grid(axis="y")
+        plt.savefig(
+            os.path.join(PARENT_PATH, "output", "average_spend_by_category.jpg")
+        )
+        plt.close()
 
-    # Total Spend by Category Over the 5 Years chart
-    plt.figure(figsize=(15, 10))
-    plt.bar(
-        total_spend_by_category["Category"],
-        total_spend_by_category["Amount"],
-        color="lightgreen",
-    )
-    plt.title("Total Spend by Category Over the 5 Years")
-    plt.xlabel("Category")
-    plt.ylabel("Total Expenditure ($)")
-    plt.xticks(rotation=45)
-    plt.grid(axis="y")
-    plt.savefig(
-        os.path.join(PARENT_PATH, "output", "total_spend_by_category_over_5_years.jpg")
-    )
-    plt.close()
+    elif chart_name == "total_spend_by_category_over_5_years.jpg":
+        # Total Spend by Category Over the 5 Years chart
+        plt.figure(figsize=(15, 10))
+        plt.bar(
+            processed_data["Category"],
+            processed_data["Amount"],
+            color="lightgreen",
+        )
+        plt.title("Total Spend by Category Over the 5 Years")
+        plt.xlabel("Category")
+        plt.ylabel("Total Expenditure ($)")
+        plt.xticks(rotation=45)
+        plt.grid(axis="y")
+        plt.savefig(
+            os.path.join(
+                PARENT_PATH, "output", "total_spend_by_category_over_5_years.jpg"
+            )
+        )
+        plt.close()
 
     return None
 
@@ -112,7 +142,7 @@ def generate_chart(monthly_expenditure, avg_spend_by_category, total_spend_by_ca
 def upload_file():
     # Checks if the request contains a file part. If not, it returns a JSON response indicating the error, with a 400 Bad Request status code.
     if "file" not in request.files:
-        return jsonify(error="No file part"), 400
+        return jsonify(error="No file uploaded"), 400
 
     # Extracts the file from the request.
     file = request.files["file"]
@@ -138,20 +168,16 @@ def upload_file():
 
 
 # Display chart endpoint
-@app.route("/process-and-chart", methods=["GET"])
-def process_and_chart():
+@app.route("/process-and-chart/<chart_name>", methods=["POST"])
+def process_and_chart(chart_name):
     # Check if the "5_years_financial_data.csv" is inside the uploads folder
     csv_file_path = os.path.join(
         app.config["UPLOAD_FOLDER"], "5_years_financial_data.csv"
     )
     if os.path.exists(csv_file_path):
-        monthly_expenditure, avg_spend_by_category, total_spend_by_category = (
-            process_csv(csv_file_path)
-        )
+        processed_data = process_csv(csv_file_path, chart_name)
 
-        generate_chart(
-            monthly_expenditure, avg_spend_by_category, total_spend_by_category
-        )
+        generate_chart(processed_data, chart_name)
 
         return jsonify(message="Graphs are processed and saved")
     else:
@@ -159,8 +185,9 @@ def process_and_chart():
 
 
 # View the saved charts
-@app.route("/charts/<chart_name>")
+@app.route("/charts/<chart_name>", methods=["GET"])
 def serve_chart(chart_name):
+    # print(chart_name)
     output_path = os.path.join(PARENT_PATH, "output")
     image_path = os.path.join(PARENT_PATH, "output", chart_name)
 
@@ -172,5 +199,3 @@ def serve_chart(chart_name):
 
 if __name__ == "__main__":
     app.run(debug=True)
-    # print(allowed_file("test.pdf"))
-    # upload_file()
