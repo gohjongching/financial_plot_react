@@ -29,7 +29,7 @@ function FileUploadComponent() {
     // Trigger the backend process to generate the chart
     const processChart = async (chartName) => {
         try {
-            await axios.post(`http://localhost:5000/process-and-chart/${chartName}`);
+            await axios.get(`http://localhost:5000/process-and-chart/${chartName}`);
             // Navigate to view the chart
             navigate(`/view-charts/${chartName}`);
         } catch (error) {

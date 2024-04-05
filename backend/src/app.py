@@ -182,7 +182,7 @@ def upload_file():
 
 
 # Display chart endpoint
-@app.route("/process-and-chart/<chart_name>", methods=["POST"])
+@app.route("/process-and-chart/<chart_name>", methods=["GET"])
 def process_and_chart(chart_name):
     # Check if the "5_years_financial_data.csv" is inside the uploads folder
     csv_file_path = os.path.join(
