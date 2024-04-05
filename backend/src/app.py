@@ -7,6 +7,8 @@ import pandas as pd
 # import plotly.express as px
 import matplotlib.pyplot as plt
 
+plt.switch_backend("agg")
+
 app = Flask(__name__)
 # By default, submission of cookies across domains is disabled due to the security implications
 # when you want to enable CORS, you wish to enable it for all use cases on a domain
