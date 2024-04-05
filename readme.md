@@ -35,7 +35,14 @@ CVPD_interview/
 ## Backend set up
 ```
 # in powershell
+# cd to desired backend folder
 cd .\backend\
+
+# Create python virtual env
+python -m venv backend_env
+
+# Activate py env
+backend_env/Scripts/Activate.ps1
 
 pip install -r requirement.txt
 ```
