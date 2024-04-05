@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
+import csv
 import pandas as pd
 
 # import plotly.express as px
@@ -17,6 +18,7 @@ CORS(app)
 PARENT_PATH = os.path.dirname(os.getcwd())
 UPLOAD_FOLDER = os.path.join(PARENT_PATH, "uploads")
 ALLOWED_EXTENSIONS = {"csv"}
+ALLOWED_MIME_TYPES = {"text/csv", "application/vnd.ms-excel"}
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -32,6 +34,11 @@ def allowed_file(filename):
         bool: True or False
     """
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def validate_csv_structure(row):
+    expected_columns = ["Date", "Category", "Amount"]
+    return all(column in row for column in expected_columns)
 
 
 def process_csv(filename, chart_name):
@@ -152,19 +159,26 @@ def upload_file():
         return jsonify(error="No selected file"), 400
 
     # Checks if the file exists and has an allowed extension.
-    if file and allowed_file(file.filename):
+    if file and allowed_file(file.filename) and file.content_type in ALLOWED_MIME_TYPES:
         # Secures the filename to prevent directory traversal attacks.
         filename = secure_filename(file.filename)
 
         # Constructs the full path where the file will be saved.
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-
-        # Saves the file to the specified location on the filesystem.
         file.save(file_path)
 
-        # Returns a JSON response indicating success, with a 200 OK status code.
-        return jsonify(message="File uploaded successfully"), 200
-    return jsonify(error="File not allowed"), 400
+        # Open and validate CSV file structure
+        try:
+            with open(file_path, mode="r", encoding="utf-8-sig") as csv_file:
+                print(csv_file)
+                csv_reader = csv.DictReader(csv_file)
+                if not validate_csv_structure(csv_reader.fieldnames):
+                    os.remove(file_path)  # Delete the file if structure is incorrect
+                    return jsonify(error="Invalid CSV structure"), 400
+        except Exception as e:
+            return jsonify(error=str(e)), 500
+        return jsonify(message="File uploaded and validated successfully"), 200
+    return jsonify(error="File not allowed. Please upload csv file."), 400
 
 
 # Display chart endpoint
