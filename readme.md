@@ -77,10 +77,10 @@ React web application is running on local host `http://localhost:3000`. Ensure t
 # 1. Backend (app.py)
 
 This Flask web application serves several purposes: 
-- it allows users to upload CSV files 
-- processes these files to generate visual charts (graphs), 
-- and then serves these charts back to the user. 
-The application is structured to handle file uploads securely, validate the structure of the uploaded CSV, generate charts based on the CSV data, and finally, allow the retrieval of these charts.
+- It allows users to upload CSV files. 
+- Processes these files to generate visual charts (graphs). 
+- Serves these charts back to the user. 
+- The application is structured to handle file uploads securely, validate the structure of the uploaded CSV, generate charts based on the CSV data, and finally, allow the retrieval of these charts.
 
 ## Initial Setup
 
@@ -103,7 +103,7 @@ The application is structured to handle file uploads securely, validate the stru
 ## Flask Routes
 
 - **@app.route("/upload", methods=["POST"])**: Handles file uploads. It performs checks to ensure a file is included in the request, validates the file type, and saves the file. It then opens the CSV to check its structure.
-- **@app.route("/process-and-chart/<chart_name>", methods=["GET"])**: Triggers the processing of the uploaded CSV file into a specified chart type. It looks for a specific CSV file, processes the data, generates a chart, and saves the chart image.
+- **@app.route("/process-and-chart/<chart_name>", methods=["GET"])**: Triggers the processing of the uploaded CSV file into a specified chart type. It looks for a specific CSV file (`5_years_financial_data.csv`), processes the data, generates a chart, and saves the chart image.
 - **@app.route("/charts/<chart_name>", methods=["GET"])**: Serves the generated chart images. It checks if the requested chart image exists and returns it, or returns an error if not found.
 
 ## Main Functionality
